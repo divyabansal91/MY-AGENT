@@ -1,22 +1,21 @@
 import os
 from fastapi import FastAPI
 from pydantic import BaseModel
-import anthropic
+from google import genai
 
 app = FastAPI()
-client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
 class Query(BaseModel):
     message: str
 
 @app.post("/chat")
 def chat(q: Query):
-    resp = client.messages.create(
-        model="claude-sonnet-5-5",
-        max_tokens=1000,
-        messages=[{"role": "user", "content": q.message}],
+    resp = client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=q.message,
     )
-    return {"reply": resp.content[0].text}
+    return {"reply": resp.text}
 
 @app.get("/")
 def health():
