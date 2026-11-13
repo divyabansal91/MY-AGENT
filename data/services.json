@@ -1,0 +1,9 @@
+{
+  "services": [
+    {"id": "ac-repair", "name": "AC Repair and Service", "price": "Rs 499 service charge", "duration_min": 60},
+    {"id": "plumbing", "name": "Plumbing", "price": "Rs 299 visit charge", "duration_min": 45},
+    {"id": "electrician", "name": "Electrician", "price": "Rs 249 visit charge", "duration_min": 45},
+    {"id": "deep-cleaning", "name": "Deep Home Cleaning", "price": "1BHK Rs 1999, 2BHK Rs 2999, 3BHK Rs 3999", "duration_min": 240}
+  ],
+  "slots": ["09:00", "11:00", "13:00", "15:00", "17:00"]
+}

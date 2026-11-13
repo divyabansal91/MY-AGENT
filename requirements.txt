@@ -1,2 +1,5 @@
-streamlit
+fastapi
+uvicorn
 google-genai
+mcp>=1.9,<2
+numpy

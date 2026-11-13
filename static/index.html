@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ServiceMate: AI Service Assistant</title>
+<style>
+  :root { --bg:#f6f7f9; --card:#fff; --text:#1c1f24; --muted:#6b7280; --brand:#2563eb; --user:#2563eb; --bot:#eef0f4; --chip:#e8f0fe; --line:#e3e6eb; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#14161a; --card:#1d2026; --text:#eceef2; --muted:#9aa3b2; --brand:#6ea0ff; --user:#2f5fd0; --bot:#272b33; --chip:#262f45; --line:#2d323c; }
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font-family:system-ui,"Segoe UI",Roboto,"Noto Sans Devanagari",sans-serif; height:100vh; display:flex; justify-content:center; }
+  .app { width:100%; max-width:760px; display:flex; flex-direction:column; height:100vh; }
+  header { padding:16px 20px; border-bottom:1px solid var(--line); background:var(--card); }
+  header h1 { margin:0; font-size:18px; }
+  header p { margin:4px 0 0; font-size:13px; color:var(--muted); }
+  #log { flex:1; overflow-y:auto; padding:16px 20px; display:flex; flex-direction:column; gap:14px; }
+  .msg { max-width:85%; padding:10px 14px; border-radius:14px; line-height:1.5; font-size:15px; word-wrap:break-word; }
+  .user { align-self:flex-end; background:var(--user); color:#fff; border-bottom-right-radius:4px; }
+  .bot { align-self:flex-start; background:var(--bot); border-bottom-left-radius:4px; }
+  .meta { align-self:flex-start; max-width:85%; font-size:12px; color:var(--muted); display:flex; flex-wrap:wrap; gap:6px; margin-top:-8px; }
+  .chip { background:var(--chip); color:var(--brand); padding:2px 8px; border-radius:10px; }
+  .chip.src { background:transparent; border:1px solid var(--line); color:var(--muted); }
+  .suggest { padding:0 20px 8px; display:flex; flex-wrap:wrap; gap:8px; }
+  .suggest button { border:1px solid var(--line); background:var(--card); color:var(--text); padding:6px 12px; border-radius:16px; cursor:pointer; font-size:13px; }
+  form { display:flex; gap:8px; padding:12px 20px 18px; background:var(--card); border-top:1px solid var(--line); }
+  input { flex:1; padding:12px 14px; border-radius:12px; border:1px solid var(--line); background:var(--bg); color:var(--text); font-size:15px; }
+  button.send { padding:0 20px; border:0; border-radius:12px; background:var(--brand); color:#fff; font-size:15px; cursor:pointer; }
+  button:disabled { opacity:.5; cursor:default; }
+  .typing { color:var(--muted); font-style:italic; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>ServiceMate AI Assistant</h1>
+    <p>AC repair · Plumbing · Electrician · Deep cleaning (Jaipur) — powered by Gemini, MCP tools and RAG</p>
+  </header>
+  <div id="log"></div>
+  <div class="suggest" id="suggest"></div>
+  <form id="form">
+    <input id="input" placeholder="अपना सवाल लिखिए…" autocomplete="off">
+    <button class="send" id="send">Send</button>
+  </form>
+</div>
+<script>
+const log = document.getElementById('log');
+const form = document.getElementById('form');
+const input = document.getElementById('input');
+const send = document.getElementById('send');
+const sid = (crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2));
+
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const fmt = s => esc(s).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/\n/g,'<br>');
+
+function add(text, cls, html) {
+  const d = document.createElement('div');
+  d.className = 'msg ' + cls;
+  if (html) d.innerHTML = text; else d.textContent = text;
+  log.appendChild(d); log.scrollTop = log.scrollHeight;
+  return d;
+}
+function addMeta(tools, sources) {
+  if (!tools.length && !sources.length) return;
+  const d = document.createElement('div'); d.className = 'meta';
+  tools.forEach(t => { const c = document.createElement('span'); c.className = 'chip'; c.textContent = '🔧 MCP: ' + t.name; d.appendChild(c); });
+  sources.forEach(s => { const c = document.createElement('span'); c.className = 'chip src'; c.textContent = '📄 RAG: ' + s; d.appendChild(c); });
+  log.appendChild(d); log.scrollTop = log.scrollHeight;
+}
+async function ask(text) {
+  add(text, 'user');
+  const wait = add('सोच रहा हूँ…', 'bot typing');
+  send.disabled = true;
+  try {
+    const r = await fetch('/api/chat', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ session_id: sid, message: text }) });
+    if (!r.ok) throw new Error(r.status);
+    const data = await r.json();
+    wait.remove();
+    add(fmt(data.reply), 'bot', true);
+    addMeta(data.tool_calls || [], data.sources || []);
+  } catch (e) {
+    wait.remove();
+    add('कनेक्शन में दिक्कत आई। कृपया दोबारा कोशिश कीजिए।', 'bot');
+  }
+  send.disabled = false; input.focus();
+}
+form.addEventListener('submit', e => { e.preventDefault(); const t = input.value.trim(); if (!t) return; input.value=''; ask(t); });
+add('नमस्ते! मैं ServiceMate असिस्टेंट हूँ। सर्विस, रेट, पॉलिसी या बुकिंग के बारे में पूछिए।', 'bot');
+['AC repair का rate क्या है?', 'Cancellation policy क्या है?', 'कल plumber बुक करना है'].forEach(q => {
+  const b = document.createElement('button'); b.type='button'; b.textContent=q; b.onclick=()=>{ document.getElementById('suggest').remove(); ask(q); };
+  document.getElementById('suggest').appendChild(b);
+});
+</script>
+</body>
+</html>
