@@ -162,7 +162,8 @@ async def chat(body: ChatIn):
                 parts.append(types.Part.from_function_response(name=fc.name, response={"result": out}))
             history.append(types.Content(role="user", parts=parts))
         return {"reply": "काम पूरा नहीं हो पाया, कृपया दोबारा कोशिश कीजिए।", "tool_calls": tool_log, "sources": sources}
-    except genai_errors.APIError:
+    except genai_errors.APIError as e:
+        print('GEMINI ERROR:', e)
         if history and history[-1].role == "user":
             history.pop()
         return {
