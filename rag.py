@@ -38,7 +38,7 @@ def _embed(texts, task_type):
     from google import genai
     from google.genai import types
 
-    client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+    client = genai.Client(api_key=os.environ["GEMINI_API_KEY"], http_options=types.HttpOptions(api_version="v1beta"))
     result = client.models.embed_content(
         model=EMBED_MODEL,
         contents=texts,

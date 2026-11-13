@@ -68,7 +68,7 @@ def _declaration(tool) -> types.FunctionDeclaration:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    state["client"] = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+    state["client"] = genai.Client(api_key=os.environ["GEMINI_API_KEY"], http_options=types.HttpOptions(api_version="v1beta"))
     async with AsyncExitStack() as stack:
         params = StdioServerParameters(
             command=sys.executable,
